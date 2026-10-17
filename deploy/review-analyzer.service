@@ -1,0 +1,31 @@
+# systemd service: runs the FastAPI app on localhost; Caddy is the public front door.
+# Installed by deploy/install.sh to /etc/systemd/system/review-analyzer.service
+[Unit]
+Description=review-analyzer web app
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/review-analyzer
+# One worker on purpose: jobs live in memory. --proxy-headers trusts X-Forwarded-For
+# only from Caddy on 127.0.0.1, so per-IP rate limits see the real visitor address.
+ExecStart=/home/ubuntu/review-analyzer/.venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 --port 8010 --proxy-headers --forwarded-allow-ips 127.0.0.1 \
+    --no-server-header
+Environment=PYTHONUNBUFFERED=1
+Restart=on-failure
+RestartSec=5
+# Hardening: read-only filesystem except the usage-counter directory; tight memory cap.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/review-analyzer/data
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target

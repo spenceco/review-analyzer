@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review Analyzer: AI insights from customer reviews</title>
+  <meta name="description" content="Upload a CSV of customer reviews and get sentiment, topics, top complaints, praise and suggested actions.">
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <h1><span class="logo" aria-hidden="true"></span>Review Analyzer</h1>
+      <p class="tagline">Upload customer reviews as a CSV. Get sentiment, topics, the top complaints and praise, and three things to do next.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- 1. Upload -->
+    <section class="card" id="upload-card" aria-labelledby="upload-title">
+      <h2 id="upload-title">1. Upload your reviews</h2>
+      <label class="dropzone" id="dropzone" for="file-input">
+        <input type="file" id="file-input" accept=".csv,text/csv" class="visually-hidden">
+        <svg class="dz-icon" aria-hidden="true" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"/><path d="m7 9 5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+        <span class="dz-main" id="dz-main">Drop a CSV here or <u>choose a file</u></span>
+        <span class="dz-hint" id="dz-hint">Needs a column named <code>review</code> (or <code>text</code>, <code>comment</code>, <code>feedback</code>). Optional: <code>rating</code>, <code>date</code>.</span>
+      </label>
+      <div class="upload-actions">
+        <button type="button" class="btn btn-primary" id="analyze-btn" disabled>Analyze reviews</button>
+        <button type="button" class="btn btn-ghost" id="sample-btn">Try the sample coffee-shop file</button>
+        <a class="link" href="/api/sample.csv" download>Download sample CSV</a>
+      </div>
+      <p class="limits" id="limits">Loading limits…</p>
+      <div class="notice notice-error" id="error" role="alert" hidden></div>
+      <div class="notice notice-warn" id="disabled-reason" hidden></div>
+    </section>
+
+    <!-- 2. Progress -->
+    <section class="card" id="progress-card" hidden aria-live="polite">
+      <h2>2. Analyzing</h2>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressbar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <p class="progress-msg" id="progress-msg">Starting…</p>
+    </section>
+
+    <!-- 3. Results -->
+    <section id="results" hidden aria-labelledby="results-title">
+      <div class="results-head">
+        <div>
+          <h2 id="results-title">Results</h2>
+          <p class="muted" id="results-sub"></p>
+        </div>
+        <a class="btn btn-primary" id="download-btn" href="#" download>Download Excel report</a>
+      </div>
+      <p class="notice notice-warn" id="fake-notice" hidden>Offline demo mode: these results come from simple keyword rules, not the AI model.</p>
+
+      <div class="tiles" id="tiles"></div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Sentiment</h3>
+          <div id="sentiment-chart" class="chart"></div>
+          <div id="rating-block" hidden>
+            <h3 class="sub-h">By star rating</h3>
+            <p class="chart-sub">Where the AI's reading of the text agrees, or disagrees, with the stars</p>
+            <div id="rating-chart" class="chart"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Topics by sentiment</h3>
+          <p class="chart-sub">Number of reviews whose main topic this is</p>
+          <div id="topic-chart" class="chart"></div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3><span class="badge badge-neg" aria-hidden="true">−</span>Top complaints</h3>
+          <ol class="insights" id="complaints"></ol>
+        </div>
+        <div class="card">
+          <h3><span class="badge badge-pos" aria-hidden="true">+</span>Top praise</h3>
+          <ol class="insights" id="praise"></ol>
+        </div>
+        <div class="card card-accent">
+          <h3><span class="badge badge-act" aria-hidden="true">→</span>Suggested actions</h3>
+          <ol class="insights actions" id="actions"></ol>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-head">
+          <h3>Every review</h3>
+          <div class="filters" role="group" aria-label="Filter by sentiment">
+            <button type="button" class="chip active" data-filter="all">All</button>
+            <button type="button" class="chip" data-filter="positive">Positive</button>
+            <button type="button" class="chip" data-filter="neutral">Neutral</button>
+            <button type="button" class="chip" data-filter="negative">Negative</button>
+            <input type="search" id="search" placeholder="Search reviews" aria-label="Search reviews">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="reviews">
+            <thead><tr><th>#</th><th>Sentiment</th><th>Topic</th><th>Summary</th><th>Rating</th></tr></thead>
+            <tbody id="reviews-body"></tbody>
+          </table>
+        </div>
+        <p class="muted small" id="table-count"></p>
+      </div>
+      <p class="center"><button type="button" class="btn btn-ghost" id="restart-btn">Analyze another file</button></p>
+    </section>
+  </main>
+
+  <footer class="wrap footer">
+    <p>Public demo: up to <span id="f-rows">200</span> reviews and 2 MB per file. Uploaded files are processed in memory and discarded after an hour. Don't upload personal data.</p>
+  </footer>
+  <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+</body>
+</html>

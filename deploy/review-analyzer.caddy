@@ -1,0 +1,31 @@
+# Caddy site for review-analyzer. Caddy gets and renews the HTTPS certificate itself.
+# sslip.io turns the IP into a hostname, so this works without buying a domain.
+# To use your own domain: replace the hostname below, point an A record at
+# 129.80.188.63, then run: sudo systemctl reload caddy
+review-analyzer.129-80-188-63.sslip.io {
+	encode zstd gzip
+
+	# Reject oversized uploads before they reach the app (app limit is 2 MB).
+	request_body {
+		max_size 3MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+
+	reverse_proxy 127.0.0.1:8010
+
+	log {
+		output file /var/log/caddy/review-analyzer.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}
+
+# Visiting the bare IP redirects to the HTTPS hostname.
+http://129.80.188.63 {
+	redir https://review-analyzer.129-80-188-63.sslip.io{uri} permanent
+}
