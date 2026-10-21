@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     # AI provider
     ai_provider: Literal["gemini", "fake"] = "gemini"
     gemini_api_key: SecretStr | None = None
-    gemini_model: str = "gemini-flash-latest"
+    gemini_model: str = "gemini-flash-lite-latest"
     request_timeout_seconds: float = 60.0
 
     # Upload limits
